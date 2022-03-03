@@ -25,6 +25,8 @@
       <commons.csv.version>1.5</commons.csv.version>
       <h2.version>1.4.196</h2.version>
       <junit.version>4.12</junit.version>
+
+<!--      <skip_maven_deploy>true</skip_maven_deploy>-->
    </properties>
 
    <groupId>com.zaxxer</groupId>
@@ -239,6 +241,11 @@
          <version>${h2.version}</version>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>mysql</groupId>
+         <artifactId>mysql-connector-java</artifactId>
+         <version>8.0.26</version>
+      </dependency>
    </dependencies>
 
    <build>
@@ -387,7 +394,8 @@
                   <!-- Sets the VM argument line used when unit tests are run. -->
                   <argLine>${surefireArgLine} ${sureFireOptions9}</argLine>
                   <!-- Skips unit tests if the value of skip.unit.tests property is true -->
-                  <skipTests>${skip.unit.tests}</skipTests>
+<!--                  <skipTests>${skip.unit.tests}</skipTests>-->
+                  <skipTests>true</skipTests>
                   <reuseForks>${sureFireForks9}</reuseForks>
                </configuration>
             </plugin>

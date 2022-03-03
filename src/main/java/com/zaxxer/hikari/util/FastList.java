@@ -39,8 +39,10 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
 {
    private static final long serialVersionUID = -4598088075242913858L;
 
+   // T.class
    private final Class<?> clazz;
    private T[] elementData;
+   // 数组中包含元素的个数
    private int size;
 
    /**
@@ -50,6 +52,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
    @SuppressWarnings("unchecked")
    public FastList(Class<?> clazz)
    {
+      // 和ArrayList相比，数组的初始化是在构造器中完成的，而ArrayList在调用无参构造的时候是在add的时候添加的,并且其初始化为10
       this.elementData = (T[]) Array.newInstance(clazz, 32);
       this.clazz = clazz;
    }
@@ -68,7 +71,8 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
 
    /**
     * Add an element to the tail of the FastList.
-    *
+    * Add操作的扩容机制比ArrayList 简单很多，考虑的因素少，
+    * 底层都调用了数组得到拷贝，这也是为什么作者希望最大连接数与最小连接数保持一致
     * @param element the element to add
     */
    @Override
@@ -228,7 +232,7 @@ public final class FastList<T> implements List<T>, RandomAccess, Serializable
                return elementData[index++];
             }
 
-            throw new NoSuchElementException("No more elements in FastList"); 
+            throw new NoSuchElementException("No more elements in FastList");
          }
       };
    }

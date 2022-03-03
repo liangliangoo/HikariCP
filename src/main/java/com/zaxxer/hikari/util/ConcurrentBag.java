@@ -66,30 +66,48 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
 {
    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentBag.class);
 
+   // 保存所有元素
+   /**
+    * 保存容器内所有元素，使用CopyOnWriteArrayList，写操作加锁并复制底层数据，
+    * 适用于读多写少的场景。HikariCP作者建议连接池最大连接数与最小连接数保持一致，这可能也是其中一个原因。
+    * 如果连接池配置为弹性容量，遇到突发流量，sharedList扩张就导致CopyOnWriteArrayList加锁并做数组拷贝；
+    * 流量过后，sharedList收缩也会导致加锁和数组拷贝。
+    *
+    */
    private final CopyOnWriteArrayList<T> sharedList;
+   // 对于threadList中的元素是否使用WeakReference保存，默认否。
    private final boolean weakThreadLocals;
 
+   // 当前线程持有的元素。可以认为sharedList包含了所有的threadList里的元素。
    private final ThreadLocal<List<Object>> threadList;
    private final IBagStateListener listener;
+   // 等待者的数量
    private final AtomicInteger waiters;
    private volatile boolean closed;
-
+   //交接队列。主要用到SynchronousQueue的两个方法offer（当没有线程获取走offer的元素时返回false）和
+   // poll(timeout,unit)（指定时间内没有获取到元素时返回null）。
    private final SynchronousQueue<T> handoffQueue;
 
+   // ConcurrentBag中的元素
    public interface IConcurrentBagEntry
    {
-      int STATE_NOT_IN_USE = 0;
-      int STATE_IN_USE = 1;
-      int STATE_REMOVED = -1;
-      int STATE_RESERVED = -2;
+      int STATE_NOT_IN_USE = 0; // 未使用。可以被借走
+      int STATE_IN_USE = 1;     // 正在使用。
+      int STATE_REMOVED = -1;   // 被移除，只有调用remove方法时会CAS改变为这个状态，修改成功后会从容器中被移除。
+      int STATE_RESERVED = -2;  // 被保留，不能被使用。往往是移除前执行保留操作。
 
       boolean compareAndSet(int expectState, int newState);
       void setState(int newState);
       int getState();
    }
 
+   // 用于通知外部，ConcurrentBag需要添加元素了
    public interface IBagStateListener
    {
+      /**
+       *
+       * @param waiting 表示需要添加介个元素
+       */
       void addBagItem(int waiting);
    }
 
@@ -101,6 +119,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    public ConcurrentBag(final IBagStateListener listener)
    {
       this.listener = listener;
+      // 判断是否使用弱引用
       this.weakThreadLocals = useWeakThreadLocals();
 
       this.handoffQueue = new SynchronousQueue<>(true);
@@ -131,6 +150,8 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
          final Object entry = list.remove(i);
          @SuppressWarnings("unchecked")
          final T bagEntry = weakThreadLocals ? ((WeakReference<T>) entry).get() : (T) entry;
+         // CAS修改元素状态为使用中
+         // 因为元素可能被其他线程偷取，所以要cas修改状态
          if (bagEntry != null && bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) {
             return bagEntry;
          }
@@ -142,6 +163,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
          for (T bagEntry : sharedList) {
             if (bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) {
                // If we may have stolen another waiter's connection, request another bag add.
+               // 如果不止有当前线程等待，可能偷取了别人的元素，通知外部放入元素
                if (waiting > 1) {
                   listener.addBagItem(waiting - 1);
                }
@@ -212,8 +234,10 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
 
       sharedList.add(bagEntry);
 
+      // 持续尝试将元素放入交接队列
       // spin until a thread takes it or none are waiting
       while (waiters.get() > 0 && !handoffQueue.offer(bagEntry)) {
+         // 当前线程主动放弃cpu执行，回到就绪状态
          yield();
       }
    }
@@ -382,10 +406,12 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    private boolean useWeakThreadLocals()
    {
       try {
+         // 如果系统变量（-D参数或环境变量）有配置com.zaxxer.hikari.useWeakReferences，走系统变量配置
+         // 这个没有标注在文档里，因为一般不建议修改
          if (System.getProperty("com.zaxxer.hikari.useWeakReferences") != null) {   // undocumented manual override of WeakReference behavior
             return Boolean.getBoolean("com.zaxxer.hikari.useWeakReferences");
          }
-
+         // 如果当前类加载器和系统类加载器不一致，返回true
          return getClass().getClassLoader() != ClassLoader.getSystemClassLoader();
       }
       catch (SecurityException se) {

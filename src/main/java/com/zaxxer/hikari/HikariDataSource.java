@@ -43,7 +43,9 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
 
    private final AtomicBoolean isShutdown = new AtomicBoolean();
 
+   // 如果使用无参构造的时候，将会是null ，用参构造时将会和pool一样
    private final HikariPool fastPathPool;
+   // volatile 修饰会导致每次读取，都会从主存中加载，写的时候也要写会主存中，速度相对于fastPathPool会慢很多
    private volatile HikariPool pool;
 
    /**
@@ -277,7 +279,7 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
 
    /**
     * Get the {@code HikariConfigMXBean} for this HikariDataSource instance.
-    * 
+    *
     * @return the {@code HikariConfigMXBean} instance.
     */
    public HikariConfigMXBean getHikariConfigMXBean()

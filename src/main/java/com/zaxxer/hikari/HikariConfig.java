@@ -45,6 +45,10 @@ import static com.zaxxer.hikari.util.UtilityElf.getNullIfEmpty;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+/**
+ * HikariConfig的成员变量涵盖了所有Hikari连接池的配置。
+ *  运行时可修改 HikariConfigMXBean
+ */
 @SuppressWarnings({"SameParameterValue", "unused"})
 public class HikariConfig implements HikariConfigMXBean
 {
@@ -61,21 +65,31 @@ public class HikariConfig implements HikariConfigMXBean
 
    // Properties changeable at runtime through the HikariConfigMXBean
    //
+   // 从连接池获取连接的超时时间，默认30s
    private volatile long connectionTimeout;
+   // 校验连接是否有效的超时时间，默认5s
    private volatile long validationTimeout;
+   // 连接空闲时间，当最小连接数<最大连接数生效，默认10min
    private volatile long idleTimeout;
+   // 连接泄露检测时长，默认0不开启，不能超过maxLifetime
    private volatile long leakDetectionThreshold;
+   // 连接最大存活时间，默认30min，需要小于数据库wait_timeout，超过这个时间未使用的连接都会被关闭
    private volatile long maxLifetime;
+   // 最大连接数 默认10
    private volatile int maxPoolSize;
+   // 最小的连接数
    private volatile int minIdle;
    private volatile String username;
    private volatile String password;
 
    // Properties NOT changeable at runtime
-   //
+   // 下面的一些属性运行时是不能修改的
+   // 初始化检查与数据库连接是否ok的超时时间，默认1，为0代表不做初始化检查
    private long initializationFailTimeout;
    private String catalog;
+   // 创建连接后，在放入连接池前，执行的sql
    private String connectionInitSql;
+   // 校验连接是否可用的sql，如果为空使用ping，否则执行这个sql
    private String connectionTestQuery;
    private String dataSourceClassName;
    private String dataSourceJndiName;
@@ -84,10 +98,13 @@ public class HikariConfig implements HikariConfigMXBean
    private String poolName;
    private String schema;
    private String transactionIsolationName;
+   // 事务隔离级别
    private boolean isAutoCommit;
    private boolean isReadOnly;
    private boolean isIsolateInternalQueries;
+   // 是否注册MBean，默认否，用于运行时修改连接池参数
    private boolean isRegisterMbeans;
+   // 是否允许连接池挂起操作，默认否
    private boolean isAllowPoolSuspension;
    private DataSource dataSource;
    private Properties dataSourceProperties;

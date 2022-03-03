@@ -61,6 +61,7 @@ import static com.zaxxer.hikari.util.ClockSource.elapsedMillis;
 import static com.zaxxer.hikari.util.ClockSource.elapsedNanos;
 import static com.zaxxer.hikari.util.UtilityElf.createInstance;
 
+// 主要负责操作实际的DataSource获取Connection，并设置Connection的一些属性。
 abstract class PoolBase
 {
    private final Logger LOGGER = LoggerFactory.getLogger(PoolBase.class);

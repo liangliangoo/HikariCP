@@ -71,10 +71,12 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
 {
    private final Logger LOGGER = LoggerFactory.getLogger(HikariPool.class);
 
-   private static final int POOL_NORMAL = 0;
-   private static final int POOL_SUSPENDED = 1;
-   private static final int POOL_SHUTDOWN = 2;
+   // 连接池的一些状态信息
+   private static final int POOL_NORMAL = 0;// 正常状态
+   private static final int POOL_SUSPENDED = 1;// 挂起状态
+   private static final int POOL_SHUTDOWN = 2;// 关闭状态
 
+   // 连接池的状态标识
    private volatile int poolState;
 
    private final long ALIVE_BYPASS_WINDOW_MS = Long.getLong("com.zaxxer.hikari.aliveBypassWindowMs", MILLISECONDS.toMillis(500));
@@ -83,17 +85,24 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    private static final String EVICTED_CONNECTION_MESSAGE = "(connection was evicted)";
    private static final String DEAD_CONNECTION_MESSAGE = "(connection is dead)";
 
+   // private final class PoolEntryCreator implements Callable<Boolean> 用于创建连接，放入连接池中
    private final PoolEntryCreator POOL_ENTRY_CREATOR = new PoolEntryCreator(null /*logging prefix*/);
    private final PoolEntryCreator POST_FILL_POOL_ENTRY_CREATOR = new PoolEntryCreator("After adding ");
+   // addConnectionExecutor的阻塞等待队列只读视图
    private final Collection<Runnable> addConnectionQueue;
+   // 创建和关闭连接的线程池
    private final ThreadPoolExecutor addConnectionExecutor;
    private final ThreadPoolExecutor closeConnectionExecutor;
 
+   // Hikari为连接池设计的一个并发类，类比LinkedBlockingQueue
    private final ConcurrentBag<PoolEntry> connectionBag;
 
+   // 创建ProxyLeakTask工厂（ProxyLeakTask用于检测连接泄露）
    private final ProxyLeakTaskFactory leakTaskFactory;
+   // 为连接池挂起和恢复封装的信号量
    private final SuspendResumeLock suspendResumeLock;
 
+   // 执行HouseKeeper任务的线程池，HouseKeeper用于维持最小连接数
    private final ScheduledExecutorService houseKeepingExecutorService;
    private ScheduledFuture<?> houseKeeperTask;
 
