@@ -56,6 +56,7 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
     */
    public HikariDataSource()
    {
+      // 初始化一些属性
       super();
       fastPathPool = null;
    }

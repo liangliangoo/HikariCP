@@ -27,6 +27,7 @@ import java.util.concurrent.ScheduledExecutorService;
 class ProxyLeakTaskFactory
 {
    private ScheduledExecutorService executorService;
+   // 设置检查点的时间间隔（定时任务的），如果该值为0 ，那么将不会做检查
    private long leakDetectionThreshold;
 
    ProxyLeakTaskFactory(final long leakDetectionThreshold, final ScheduledExecutorService executorService)

@@ -202,8 +202,10 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
     */
    public void requite(final T bagEntry)
    {
+      // 修改entry状态为未使用，此时已经可以被别的线程借走了，因为entry在shareList里
       bagEntry.setState(STATE_NOT_IN_USE);
 
+      // 先尝试通过交接队列给等候线程发放entry
       for (int i = 0; waiters.get() > 0; i++) {
          if (bagEntry.getState() != STATE_NOT_IN_USE || handoffQueue.offer(bagEntry)) {
             return;
@@ -216,6 +218,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
          }
       }
 
+      // 如果没有线程等候，或发放失败，放入threadList
       final List<Object> threadLocalList = threadList.get();
       threadLocalList.add(weakThreadLocals ? new WeakReference<>(bagEntry) : bagEntry);
    }

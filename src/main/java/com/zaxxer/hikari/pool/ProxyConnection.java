@@ -55,9 +55,11 @@ public abstract class ProxyConnection implements Connection
    private static final Set<String> ERROR_STATES;
    private static final Set<Integer> ERROR_CODES;
 
+   // 实际的数据库连接
    @SuppressWarnings("WeakerAccess")
    protected Connection delegate;
 
+   // 关联的poolEntry
    private final PoolEntry poolEntry;
    private final ProxyLeakTask leakTask;
    private final FastList<Statement> openStatements;
@@ -78,9 +80,9 @@ public abstract class ProxyConnection implements Connection
       LOGGER = LoggerFactory.getLogger(ProxyConnection.class);
 
       ERROR_STATES = new HashSet<>();
-      ERROR_STATES.add("0A000"); // FEATURE UNSUPPORTED
-      ERROR_STATES.add("57P01"); // ADMIN SHUTDOWN
-      ERROR_STATES.add("57P02"); // CRASH SHUTDOWN
+      ERROR_STATES.add("0A000"); // FEATURE UNSUPPORTED 不支持的功能
+      ERROR_STATES.add("57P01"); // ADMIN SHUTDOWN 关机
+      ERROR_STATES.add("57P02"); // CRASH SHUTDOWN 宕机
       ERROR_STATES.add("57P03"); // CANNOT CONNECT NOW
       ERROR_STATES.add("01002"); // SQL92 disconnect error
       ERROR_STATES.add("JZ0C0"); // Sybase disconnect error
@@ -230,33 +232,41 @@ public abstract class ProxyConnection implements Connection
    public final void close() throws SQLException
    {
       // Closing statements can cause connection eviction, so this must run before the conditional below
+      // 关闭所有打开的Statement
       closeStatements();
 
       if (delegate != ClosedConnection.CLOSED_CONNECTION) {
          leakTask.cancel();
 
          try {
+            // 是否需要回滚
             if (isCommitStateDirty && !isAutoCommit) {
                delegate.rollback();
                lastAccess = currentTime();
                LOGGER.debug("{} - Executed rollback on connection {} due to dirty commit state on close().", poolEntry.getPoolName(), delegate);
             }
 
+            // 用户是否设置过readOnly等连接属性
             if (dirtyBits != 0) {
+               // 如果设置过，则恢复连接属性到创建时的状态
                poolEntry.resetConnectionState(this, dirtyBits);
                lastAccess = currentTime();
             }
 
+            // 清除警告信息
             delegate.clearWarnings();
          }
          catch (SQLException e) {
             // when connections are aborted, exceptions are often thrown that should not reach the application
+            // // 发生异常可能会关闭连接
             if (!poolEntry.isMarkedEvicted()) {
                throw checkException(e);
             }
          }
          finally {
+            // 把deletgate改为CLOSED_CONNECTION
             delegate = ClosedConnection.CLOSED_CONNECTION;
+            // 归还poolEntry
             poolEntry.recycle(lastAccess);
          }
       }

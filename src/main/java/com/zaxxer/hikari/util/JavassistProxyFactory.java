@@ -50,6 +50,8 @@ import javassist.bytecode.ClassFile;
  * method bodies into the {@link ProxyFactory} class methods that can instantiate
  * instances of the generated proxies.
  *
+ * 这里采用了字节码技术，生成一些代理对象
+ *
  * @author Brett Wooldridge
  */
 public final class JavassistProxyFactory
@@ -95,6 +97,7 @@ public final class JavassistProxyFactory
       for (CtMethod method : proxyCt.getMethods()) {
          switch (method.getName()) {
          case "getProxyConnection":
+            // $$ 是所有参数的缩写
             method.setBody("{return new " + packageName + ".HikariProxyConnection($$);}");
             break;
          case "getProxyStatement":

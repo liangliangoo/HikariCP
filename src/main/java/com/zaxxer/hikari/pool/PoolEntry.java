@@ -165,6 +165,10 @@ final class PoolEntry implements IConcurrentBagEntry
       stateUpdater.set(this, update);
    }
 
+   /**
+    * 关闭MaxLifeTime超时检测任务，一些变量赋空值帮助GC。
+    * @return Connection
+    */
    Connection close()
    {
       ScheduledFuture<?> eol = endOfLife;

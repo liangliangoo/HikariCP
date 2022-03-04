@@ -117,6 +117,7 @@ abstract class PoolBase
       this.validationTimeout = config.getValidationTimeout();
       this.lastConnectionFailure = new AtomicReference<>();
 
+      // 初始化dataSource,里面用的原生的jdbc
       initializeDataSource();
    }
 
@@ -201,7 +202,7 @@ abstract class PoolBase
    // ***********************************************************************
    //                         PoolEntry methods
    // ***********************************************************************
-
+   // 操作DriverDataSource获取真正的Connection。
    PoolEntry newPoolEntry() throws Exception
    {
       return new PoolEntry(newConnection(), this, isReadOnly, isAutoCommit);
@@ -278,6 +279,7 @@ abstract class PoolBase
       }
 
       try {
+         // JMX 的相关操作
          final MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
          final ObjectName beanConfigName = new ObjectName("com.zaxxer.hikari:type=PoolConfig (" + poolName + ")");
@@ -380,6 +382,7 @@ abstract class PoolBase
             throw new SQLTransientConnectionException("DataSource returned null unexpectedly");
          }
 
+         // 设置当前连接的状态信息
          setupConnection(connection);
          lastConnectionFailure.set(null);
          return connection;

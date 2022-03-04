@@ -134,6 +134,7 @@ public class HikariConfig implements HikariConfigMXBean
 
       String systemProp = System.getProperty("hikaricp.configurationFile");
       if (systemProp != null) {
+         // 从文件中获取属性绑定给HikariConfig
          loadProperties(systemProp);
       }
    }
