@@ -34,7 +34,7 @@ import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 
 /**
  * The HikariCP pooled DataSource.
- *
+ * 汇集数据源描述的相关信息，例如配置、连接池、连接对象、状态管理等；
  * @author Brett Wooldridge
  */
 public class HikariDataSource extends HikariConfig implements DataSource, Closeable
@@ -90,6 +90,7 @@ public class HikariDataSource extends HikariConfig implements DataSource, Closea
 
       // See http://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java
       HikariPool result = pool;
+      //  单例模式中的 CAS实现方式，保证连接池仅存在一个
       if (result == null) {
          synchronized (this) {
             result = pool;

@@ -88,7 +88,7 @@ public class ConcurrentBag<T extends IConcurrentBagEntry> implements AutoCloseab
    // poll(timeout,unit)（指定时间内没有获取到元素时返回null）。
    private final SynchronousQueue<T> handoffQueue;
 
-   // ConcurrentBag中的元素
+   // ConcurrentBag中的元素,这个里面就要放置具体的connection
    public interface IConcurrentBagEntry
    {
       int STATE_NOT_IN_USE = 0; // 未使用。可以被借走

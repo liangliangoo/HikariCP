@@ -64,7 +64,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * This is the primary connection pool class that provides the basic
  * pooling behavior for HikariCP.
- *
+ * 提供对连接池与池中对象管理的核心能力，并实现池相关监控数据的查询方法；
  * @author Brett Wooldridge
  */
 public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBagStateListener
@@ -79,7 +79,9 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
    // 连接池的状态标识
    private volatile int poolState;
 
+   // 检查连接是否活着的空窗期，也就是说，如果这个连接从上次使用到现在，不到 500 毫秒，就不检查它是否活着了，默认它活着；超过 500 毫秒，才检查一下。
    private final long ALIVE_BYPASS_WINDOW_MS = Long.getLong("com.zaxxer.hikari.aliveBypassWindowMs", MILLISECONDS.toMillis(500));
+   // 和HouseKeeper 中定时任务相关联
    private final long HOUSEKEEPING_PERIOD_MS = Long.getLong("com.zaxxer.hikari.housekeeping.periodMs", SECONDS.toMillis(30));
 
    private static final String EVICTED_CONNECTION_MESSAGE = "(connection was evicted)";
@@ -709,6 +711,7 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
 
    /**
     * Creating and adding poolEntries (connections) to the pool.
+    * 主要用来创建连接实例
     */
    private final class PoolEntryCreator implements Callable<Boolean>
    {
@@ -839,6 +842,9 @@ public final class HikariPool extends PoolBase implements HikariPoolMXBean, IBag
       }
    }
 
+   /**
+    * 自定义异常信息
+    */
    public static class PoolInitializationException extends RuntimeException
    {
       private static final long serialVersionUID = 929872118275916520L;
